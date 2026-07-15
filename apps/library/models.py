@@ -6,26 +6,9 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
+from django.conf import settings
 
-class Gender(models.TextChoices):
-    MALE = 'M', _('Male')
-    FEMALE = 'F', _('Female')
-    OTHER = 'O', _('Other')
-
-
-class TimeStampedModel(models.Model):
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        abstract = True
-
-
-class UUIDModel(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-
-    class Meta:
-        abstract = True
+from apps.core.models import UUIDModel, TimeStampedModel, Gender
 
 
 def age_validator(value):
@@ -129,7 +112,7 @@ class Book(UUIDModel, TimeStampedModel):
         HORROR = 'Horror', _('Horror'),
         HISTORY = 'History', _('History')
 
-    title = models.CharField(max_length=50, verbose_name=_('Title'))
+    title = models.CharField(max_length=50, verbose_name=_('Title'), db_index=True)
     author = models.ForeignKey(
         Author,
         null=True,
@@ -166,6 +149,18 @@ class Book(UUIDModel, TimeStampedModel):
     libraries = models.ManyToManyField(Library, verbose_name=_('Libraries'), blank=True, related_name='books')
     description = models.TextField(blank=True, verbose_name=_('Summary'))
 
+    class Meta:
+        db_table = 'library_books'
+        verbose_name = _('Book')
+        verbose_name_plural = _('Books')
+        ordering = ('-published_at',)
+        unique_together = (('author', 'title'), ('author', 'published_at'))
+        get_latest_by = 'created_at'
+        indexes = [
+            models.Index(fields=['title', 'author']),
+            models.Index(fields=['published_at'], name='published_at_idx'),
+        ]
+
     @property
     def rating(self):
         reviews = self.reviews.all()
@@ -183,7 +178,7 @@ class Posts(TimeStampedModel):
     title = models.CharField(max_length=50, verbose_name=_('Title'))
     body = models.TextField(verbose_name=_('Body'))
     author = models.ForeignKey(
-        Author,
+        settings.AUTH_USER_MODEL,
         null=True,
         blank=True,
         on_delete=models.SET_NULL,

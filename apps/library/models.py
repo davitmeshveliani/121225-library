@@ -71,8 +71,13 @@ class Library(UUIDModel, TimeStampedModel):
     site = models.URLField(blank=True, verbose_name=_('Site'))
     slug = models.SlugField(max_length=70, unique=True, blank=True, verbose_name=_('Slug'))
 
+    class Meta:
+        ordering = ['-created_at']
+        get_latest_by = 'created_at'
+
     def __str__(self):
         return self.name
+
 
 
 class Member(UUIDModel, TimeStampedModel):

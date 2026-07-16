@@ -22,11 +22,10 @@ class User(AbstractBaseUser, PermissionsMixin, UUIDModel):
 
     date_joined = models.DateTimeField(auto_now_add=True)
 
-
     objects = UserManager()
 
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = []
 
     def __str__(self):
-        return self.email
+        return self.username

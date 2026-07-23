@@ -1,15 +1,16 @@
 import os
-import django
-from django.utils.text import slugify
 import sys
-
+import django
 from timeit import timeit
+
+from django.utils.text import slugify
+from django.db.models import Q
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
 
-
 from apps.library.models import Book, Author, Library
+
 
 def create_library():
     obj = Library.objects.create(
@@ -27,8 +28,7 @@ def create_library_1():
     obj = Library(
         name='Country Library',
         location='Berlin',
-        site='https://city.city-library.com',
-        slug=slugify('Country Library'),
+        site='https://city.city-library.com'
     )
     print(obj.id)
     print(obj)
@@ -97,5 +97,63 @@ def filter_books():
     print(libraries_all)
 
 
+def filter_books_by_pages():
+    books = Book.objects.filter(page_count__lt=200)
+    for book in books:
+        print(book, book.page_count)
+
+
+def filter_with_Q_1():
+    books = Book.objects.filter(page_count__lt=55, genre=Book.Genre.HORROR)
+    for book in books:
+        print(book, book.genre)
+
+    print('-' * 100)
+
+    books = Book.objects.filter(page_count__lt=55).filter(genre=Book.Genre.HORROR)
+    for book in books:
+        print(book, book.genre)
+
+    print('-' * 100)
+
+    books = Book.objects.filter(Q(page_count__lt=55) & Q(genre=Book.Genre.HORROR))
+    for book in books:
+        print(book, book.genre)
+
+
+def filter_with_Q_2():
+    books = Book.objects.filter(Q(genre=Book.Genre.HORROR) | Q(genre=Book.Genre.FICTION) | Q(page_count__lt=55))
+
+    for book in books:
+        print(book, book.genre)
+
+
+
+def filter_with_Q_2_updare():
+    # books = (Book.objects.filter(Q(genre=Book.Genre.HORROR) | Q(genre=Book.Genre.FICTION) | Q(page_count__lt=55))
+    #          .update(description='trulala'))
+    #
+    # print(books)
+
+    books = (Book.objects.filter(Q(genre=Book.Genre.HORROR) | Q(genre=Book.Genre.FICTION) | Q(page_count__lt=55)))
+
+    for book in books:
+        print(book, book.description)
+
+
+
+def filter_with_F():
+    books = (Book.objects.filter(Q(genre=Book.Genre.HORROR) | Q(genre=Book.Genre.FICTION) | Q(page_count__lt=55))
+             .update(description='description[:3].upper()'))
+
+    print(books)
+
+    books = (Book.objects.filter(Q(genre=Book.Genre.HORROR) | Q(genre=Book.Genre.FICTION) | Q(page_count__lt=55)))
+
+    for book in books:
+        print(book, book.description)
+
+
+
 if __name__ == '__main__':
-    filter_books()
+    filter_with_Q_2_updare()

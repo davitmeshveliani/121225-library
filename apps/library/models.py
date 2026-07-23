@@ -1,6 +1,7 @@
 import uuid
 
 from django.db import models
+from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
@@ -78,6 +79,11 @@ class Library(UUIDModel, TimeStampedModel):
     def __str__(self):
         return self.name
 
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
 
 
 class Member(UUIDModel, TimeStampedModel):
@@ -153,6 +159,7 @@ class Book(UUIDModel, TimeStampedModel):
     )
     libraries = models.ManyToManyField(Library, verbose_name=_('Libraries'), blank=True, related_name='books')
     description = models.TextField(blank=True, verbose_name=_('Summary'))
+    photo = models.ImageField(upload_to='books', blank=True, verbose_name=_('Photo'))
 
     class Meta:
         db_table = 'library_books'
